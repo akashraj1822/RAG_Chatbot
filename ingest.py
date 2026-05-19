@@ -1,5 +1,5 @@
 from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone, ServerlessSpec
 import os
@@ -11,7 +11,7 @@ PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 INDEX_NAME = os.getenv("PINECONE_INDEX_NAME")
 
 # Load PDF
-loader = PyPDFLoader("data/sample.pdf")
+loader = PyPDFLoader("data\\Basic Pdf Rag Chatbot Starter Guide.pdf")
 docs = loader.load()
 
 # Split text
