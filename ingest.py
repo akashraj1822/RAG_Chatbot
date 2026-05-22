@@ -1,56 +1,61 @@
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
-from pinecone import Pinecone, ServerlessSpec
-import os
+from pinecone import Pinecone
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 INDEX_NAME = os.getenv("PINECONE_INDEX_NAME")
 
-# Load PDF
-loader = PyPDFLoader("data\\Basic Pdf Rag Chatbot Starter Guide.pdf")
-docs = loader.load()
-
-# Split text
-splitter = RecursiveCharacterTextSplitter(
-    chunk_size=500,
-    chunk_overlap=50
-)
-
-chunks = splitter.split_documents(docs)
-
-# Embedding model
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# Pinecone setup
 pc = Pinecone(api_key=PINECONE_API_KEY)
-
-if INDEX_NAME not in [index.name for index in pc.list_indexes()]:
-    pc.create_index(
-        name=INDEX_NAME,
-        dimension=384,
-        metric="cosine",
-        spec=ServerlessSpec(
-            cloud="aws",
-            region="us-east-1"
-        )
-    )
 
 index = pc.Index(INDEX_NAME)
 
-# Store embeddings
-for i, chunk in enumerate(chunks):
-    embedding = embedding_model.encode(chunk.page_content).tolist()
+def ingest_pdf(file_path, filename):
 
-    index.upsert([
-        (
+    index.delete(delete_all=True)
+
+    loader = PyPDFLoader(file_path)
+
+    docs = loader.load()
+
+    for doc in docs:
+        doc.metadata["source"] = filename
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=50
+    )
+
+    chunks = splitter.split_documents(docs)
+
+    texts = [
+        chunk.page_content
+        for chunk in chunks
+    ]
+
+    embeddings = embedding_model.encode(
+        texts
+    ).tolist()
+
+    vectors = []
+
+    for i, chunk in enumerate(chunks):
+
+        vectors.append((
             str(i),
-            embedding,
-            {"text": chunk.page_content}
-        )
-    ])
+            embeddings[i],
+            {
+                "text": chunk.page_content,
+                "source": filename
+            }
+        ))
 
-print("Embeddings stored successfully")
+    index.upsert(vectors=vectors)
+
+    print("Embeddings stored successfully")
