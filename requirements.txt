@@ -7,7 +7,7 @@ langchain
 langchain-community
 langchain-text-splitters
 pypdf
-spython-dotenv
+python-dotenv
 groq
 python-multipart
 requests
