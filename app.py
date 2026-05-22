@@ -6,12 +6,20 @@ from transformers import pipeline
 from dotenv import load_dotenv
 import os
 import shutil
+from fastapi.middleware.cors import CORSMiddleware
 from ingest import ingest_pdf
 
 # Load environment variables
 load_dotenv()
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Environment variables
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
