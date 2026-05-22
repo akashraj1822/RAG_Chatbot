@@ -9,3 +9,4 @@ pinecone
 python-dotenv
 transformers
 torch
+groq

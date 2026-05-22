@@ -2,6 +2,7 @@ from fastapi import FastAPI,UploadFile,File
 from pydantic import BaseModel
 from pinecone import Pinecone
 from sentence_transformers import SentenceTransformer
+from groq import Groq
 from transformers import pipeline
 from dotenv import load_dotenv
 import os
@@ -32,14 +33,9 @@ embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 pc = Pinecone(api_key=PINECONE_API_KEY)
 index = pc.Index(INDEX_NAME)
 
-# LLM Pipeline
-llm = pipeline(
-    "text-generation",
-    model="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-    max_new_tokens=200,
-    temperature=0.3
+client = Groq(
+    api_key=os.getenv("GROQ_API_KEY")
 )
-
 # Request schema
 class QueryRequest(BaseModel):
     question: str
@@ -89,8 +85,13 @@ Question:
 
 Answer:
 """
-    response = llm(prompt,return_full_text=False)
-    answer = response[0]["generated_text"].strip()
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {"role": "user","content": prompt}
+            ],
+        model="llama3-8b-8192"
+    )
+    answer = chat_completion.choices[0].message.content
 
     return {
         "answer": answer
