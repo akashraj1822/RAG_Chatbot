@@ -89,7 +89,7 @@ Answer:
         messages=[
             {"role": "user","content": prompt}
             ],
-        model="llama3-8b-instant"
+        model="llama-3.1-8b-instant"
     )
     answer = chat_completion.choices[0].message.content
 
